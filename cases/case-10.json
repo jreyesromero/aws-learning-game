@@ -1,0 +1,55 @@
+{
+  "id": "case-10",
+  "title": "The Zone Blackout",
+  "description": "A datacenter outage took down The Digital Bakery's entire website.",
+  "chapter": 5,
+  "client": "martha",
+  "characters": [
+    "martha"
+  ],
+  "keywords": [
+    "RDS",
+    "Multi-AZ",
+    "Availability",
+    "Disaster Recovery"
+  ],
+  "briefing": {
+    "clientMessage": "[Story briefing coming soon]",
+    "architecture": "[Architecture diagram coming soon]"
+  },
+  "evidence": [
+    {
+      "service": "COMING_SOON",
+      "label": "Evidence",
+      "text": "This case is coming soon. Check back later for the full investigation!",
+      "hint": "Stay tuned!"
+    }
+  ],
+  "accusations": {
+    "rootCauses": [
+      {
+        "id": "coming-soon",
+        "text": "Coming soon"
+      }
+    ],
+    "keyEvidence": [
+      {
+        "id": "coming-soon",
+        "text": "Coming soon"
+      }
+    ],
+    "fixes": [
+      {
+        "id": "coming-soon",
+        "text": "Coming soon"
+      }
+    ]
+  },
+  "solution": {
+    "rootCause": "coming-soon",
+    "keyEvidence": "coming-soon",
+    "fix": "coming-soon"
+  },
+  "explanation": "This case is coming soon.",
+  "hiddenBonus": null
+}

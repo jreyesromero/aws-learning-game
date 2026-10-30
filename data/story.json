@@ -1,0 +1,121 @@
+{
+  "title": "Cloud Detective Agency",
+  "tagline": "Learn AWS by solving real cloud incidents",
+  "chapters": [
+    {
+      "id": 1,
+      "number": 1,
+      "title": "First Day",
+      "description": "Your first case at the agency tests your investigative skills.",
+      "cases": [
+        "case-01"
+      ]
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "title": "Growing Pains",
+      "description": "As word spreads about the agency, new clients bring fresh challenges.",
+      "cases": [
+        "case-02",
+        "case-03"
+      ]
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "title": "Hidden Problems",
+      "description": "Some issues lurk beneath the surface, invisible to basic monitoring.",
+      "cases": [
+        "case-04",
+        "case-05"
+      ]
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "title": "Scaling Up",
+      "description": "As clients grow, their infrastructure becomes more complex and failures more costly.",
+      "cases": [
+        "case-06",
+        "case-07",
+        "case-08"
+      ]
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "title": "The Big Leagues",
+      "description": "The final chapter brings your greatest challenge yet—and a shocking discovery.",
+      "cases": [
+        "case-09",
+        "case-10",
+        "case-11"
+      ]
+    }
+  ],
+  "storyEvents": {
+    "campaign_start": {
+      "character": "rosa",
+      "dialogue": "Welcome to Cloud Detective Agency! I'm Rosa, your mentor. We solve cloud incidents that others can't figure out. You'll learn AWS the hard way—by debugging real problems. Ready for your first case?"
+    },
+    "case-01_intro": {
+      "character": "rosa",
+      "dialogue": "Your first client is Martha, who owns The Digital Bakery. Her website went down during their biggest sale of the year. Let's see what happened."
+    },
+    "case-01_outro": {
+      "character": "rosa",
+      "dialogue": "Great work! You caught the security group misconfiguration. This is exactly the kind of subtle-but-critical issue we see in production. You're off to a strong start."
+    },
+    "case-02_intro": "Rosa: Our next client is Ana from BrightPath Academy. She runs an online school with a tight budget. Look at the time—it's Monday 8:00 AM and students are supposed to start online classes at 10:00. After cracking that security group case, you're officially the expert now. Let's help Ana get those students online!",
+    "case-03_intro": {
+      "character": "rosa",
+      "dialogue": "Still working with Martha—looks like Luke, the intern, has struck again. This time it's something related to data storage."
+    },
+    "case-03_outro": {
+      "character": "luke",
+      "dialogue": "I'm really sorry about that. I was just trying to make things more secure... I clearly have a lot to learn."
+    },
+    "case-04_intro": {
+      "character": "rosa",
+      "dialogue": "Some of the trickiest problems aren't about crashes or errors. Sometimes it's what you're NOT monitoring that causes the real damage."
+    },
+    "case-05_intro": {
+      "character": "rosa",
+      "dialogue": "Meet Dev from PixelForge. He's built something impressive, but they're moving so fast that some basic cloud practices got overlooked."
+    },
+    "case-06_intro": {
+      "character": "rosa",
+      "dialogue": "As companies scale, permissions and access control become critical. One wrong IAM policy can break everything."
+    },
+    "case-07_intro": {
+      "character": "rosa",
+      "dialogue": "Sometimes the problem is about network topology. A missing route can be just as disruptive as a misconfigured firewall."
+    },
+    "case-08_intro": {
+      "character": "rosa",
+      "dialogue": "This one's tricky. High bills often hide architectural problems. Let's find where the money is going."
+    },
+    "case-09_intro": {
+      "character": "rosa",
+      "dialogue": "Martha's business has exploded. She's handling more traffic than ever before. Let's see if her database can keep up."
+    },
+    "case-10_intro": {
+      "character": "rosa",
+      "dialogue": "High availability and disaster recovery are no longer optional. This one tests those principles."
+    },
+    "case-11_intro": {
+      "character": "rosa",
+      "dialogue": "This is it—our biggest case yet. Something is very wrong, and it might be connected to the earlier incidents. I have a feeling Luke might actually help us this time."
+    },
+    "case-11_outro": {
+      "character": "rosa",
+      "dialogue": "You did it. You're not just a detective anymore—you're a full-fledged investigator. The cloud is safer because of you."
+    },
+    "campaign_complete": {
+      "character": "rosa",
+      "dialogue": "You've completed the campaign. You've seen security groups, S3 policies, monitoring gaps, timeouts, IAM issues, networking, scaling, and more. You're ready for anything the cloud throws at you. Congratulations, Senior Investigator!"
+    },
+    "case-02_outro": "Ana: Thank goodness! I was so worried. How can I avoid this happening again? Rosa: Great question. This is a perfect example of why infrastructure matters. We'll make sure it's set up properly. By the way, Martha from The Digital Bakery called again. Apparently Luke has been trying to 'improve security' over there. We better check on that next."
+  }
+}

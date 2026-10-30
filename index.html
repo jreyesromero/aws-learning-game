@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Detective - AWS Learning Game</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>☁️ Cloud Detective</h1>
+                <div id="playerRank" class="player-rank">🔵 Junior Detective</div>
+                <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+            </div>
+        </header>
+
+        <!-- Campaign Screen -->
+        <section id="campaignScreen" class="screen">
+            <div class="screen-content">
+                <!-- Campaign content populated by game.js -->
+            </div>
+        </section>
+
+        <!-- Story Scene Screen -->
+        <section id="storyScreen" class="screen hidden">
+            <div class="screen-content">
+                <!-- Story scene content populated by game.js -->
+            </div>
+        </section>
+
+        <!-- Start Screen (legacy) -->
+        <section id="startScreen" class="screen hidden">
+            <div class="screen-content">
+                <h2>Welcome, Detective</h2>
+                <p>Investigate cloud incidents and find the root cause. Choose a case to begin.</p>
+
+                <div id="caseList" class="case-list">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <div class="info-box">
+                    <p>💡 Tip: Review the evidence carefully. Each hint costs 10 points.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Briefing Screen -->
+        <section id="briefingScreen" class="screen hidden">
+            <div class="screen-content">
+                <button class="back-button" id="backFromBriefing">← Back</button>
+
+                <h2 id="briefingTitle"></h2>
+
+                <div class="ticket-container">
+                    <div class="support-ticket">
+                        <div class="ticket-header">
+                            <div class="ticket-info">
+                                <span class="ticket-label">📞 Support Ticket</span>
+                                <span class="ticket-id">#CASE-001</span>
+                            </div>
+                            <div class="ticket-status">
+                                <span class="status-badge critical">🔴 CRITICAL</span>
+                            </div>
+                        </div>
+
+                        <div class="ticket-meta">
+                            <div class="meta-row">
+                                <span class="meta-label">From:</span>
+                                <span class="meta-value">Martha 👩‍💼</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Company:</span>
+                                <span class="meta-value">The Digital Bakery 🥐</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Issue:</span>
+                                <span class="meta-value">Website Down - Urgent!</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Time Reported:</span>
+                                <span class="meta-value">2024-12-15 23:59:42 UTC</span>
+                            </div>
+                        </div>
+
+                        <div class="ticket-divider"></div>
+
+                        <div class="ticket-body">
+                            <h3>📝 Issue Description</h3>
+                            <p id="briefingMessage"></p>
+                        </div>
+
+                        <div class="ticket-divider"></div>
+
+                        <div class="ticket-architecture">
+                            <h3>🏗️ System Architecture</h3>
+                            <pre id="architectureDiagram"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="startInvestigation" class="btn-primary">→ Start Investigation</button>
+            </div>
+        </section>
+
+        <!-- Evidence Screen -->
+        <section id="evidenceScreen" class="screen hidden">
+            <div class="screen-content">
+                <button class="back-button" id="backFromEvidence">← Back to Briefing</button>
+
+                <h2>Query AWS Console</h2>
+                <p>Click on an AWS service to investigate the incident and find clues about what went wrong.</p>
+
+                <div class="evidence-panel">
+                    <div class="evidence-controls">
+                        <div class="score-display">
+                            <span>📊 Score: <strong id="currentScore">100</strong></span>
+                            <span>💡 Hints: <strong id="hintsUsed">0</strong>/3</span>
+                        </div>
+                        <button id="askHelp" class="btn-help">Ask for Help (-10 pts)</button>
+                    </div>
+
+                    <div class="service-menu">
+                        <h3>Select AWS Service</h3>
+                        <div id="serviceButtons" class="service-buttons">
+                            <!-- Service buttons populated here -->
+                        </div>
+                    </div>
+
+                    <div id="evidenceLog" class="evidence-log">
+                        <!-- Console output appears here -->
+                    </div>
+
+                    <div class="evidence-actions">
+                        <button id="clearLog" class="btn-secondary">Clear Console</button>
+                        <button id="makeAccusation" class="btn-accusation" disabled>→ Make Accusation</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accusation Screen -->
+        <section id="accusationScreen" class="screen hidden">
+            <div class="screen-content">
+                <button class="back-button" id="backFromAccusation">← Back</button>
+
+                <h2>What's Your Accusation?</h2>
+
+                <div class="accusation-form">
+                    <div class="form-group">
+                        <label for="rootCauseSelect">Root Cause:</label>
+                        <select id="rootCauseSelect">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="keyEvidenceSelect">Key Evidence:</label>
+                        <select id="keyEvidenceSelect">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fixSelect">The Fix:</label>
+                        <select id="fixSelect">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+
+                    <button id="submitAccusation" class="btn-primary">Submit Accusation</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Screen -->
+        <section id="resultsScreen" class="screen hidden">
+            <div class="screen-content">
+                <h2 id="resultTitle"></h2>
+
+                <div id="resultContent" class="result-content">
+                    <!-- Results populated here -->
+                </div>
+
+                <div class="results-actions">
+                    <button id="playAgain" class="btn-primary">Play This Case Again</button>
+                    <button id="backToStart" class="btn-secondary">Back to Cases</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "rosa": {
+    "name": "Rosa",
+    "role": "Your Mentor",
+    "avatar": "👩‍💼",
+    "color": "#FF6B6B",
+    "bio": "Rosa is an experienced cloud detective and your mentor at Cloud Detective Agency. She provides guidance through the trickiest cases and her hints come from years of troubleshooting production incidents."
+  },
+  "martha": {
+    "name": "Martha",
+    "role": "Client - The Digital Bakery",
+    "avatar": "👩‍🍳",
+    "color": "#FFA500",
+    "bio": "Owner of The Digital Bakery, a growing online bakery business. Her website incidents range from simple configuration mistakes to complex scaling challenges as her business grows."
+  },
+  "luke": {
+    "name": "Luke",
+    "role": "Intern",
+    "avatar": "👨‍💻",
+    "color": "#4ECDC4",
+    "bio": "A well-meaning but accident-prone intern at The Digital Bakery. Luke causes several incidents by trying to 'fix' things without fully understanding them. Over the campaign, he learns and eventually helps solve the final mystery."
+  },
+  "ana": {
+    "name": "Ana",
+    "role": "Client - BrightPath Academy",
+    "avatar": "👩‍🏫",
+    "color": "#95E1D3",
+    "bio": "Director of BrightPath Academy, an online school serving thousands of students with a tight budget. Her infrastructure challenges involve monitoring, storage, and scaling on a limited cloud budget."
+  },
+  "dev": {
+    "name": "Dev",
+    "role": "Client - PixelForge",
+    "avatar": "🚀",
+    "color": "#A8E6CF",
+    "bio": "Founder of PixelForge, a fast-growing startup that prioritizes speed over stability. His incidents often stem from moving too fast without proper testing, logging, and IAM practices."
+  }
+}

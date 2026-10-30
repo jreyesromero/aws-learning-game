@@ -1,0 +1,142 @@
+{
+  "id": "case-01",
+  "title": "The Website That Vanished at Midnight",
+  "description": "A bakery's website went down during a holiday sale. Investigate the cloud incident.",
+  "briefing": {
+    "clientMessage": "This is Martha, owner of The Digital Bakery. Last night was our biggest sale of the year, but at 11:59 PM our website just stopped working. Customers got 503 errors, and we lost thousands in sales. I don't understand what happened—we didn't deploy anything unusual, and our server team is stumped. Can you help me figure out what went wrong?",
+    "architecture": "┌─────────────────────────────────────────┐\n│          Internet Users                 │\n│    (Customers accessing website)        │\n└────────────────┬────────────────────────┘\n                 │\n                 ↓\n    ┌────────────────────────┐\n    │  ALB (Load Balancer)   │\n    │    Port: 80, 443       │\n    └────────────┬───────────┘\n                 │\n      ┌──────────┴──────────┐\n      ↓                     ↓\n  ┌─────────┐           ┌─────────┐\n  │   EC2   │           │   EC2   │\n  │Instance1│           │Instance2│\n  │Port: 80 │           │Port: 80 │\n  └────┬────┘           └────┬────┘\n       │                     │\n       └──────────┬──────────┘\n                  ↓\n   ┌──────────────────────────┐\n   │ RDS Database (MySQL)     │\n   └──────────────────────────┘"
+  },
+  "evidence": [
+    {
+      "service": "ALB",
+      "label": "Load Balancer Status",
+      "text": "HTTP Status from ALB: 503 Service Unavailable\nError Message: Service Temporarily Unavailable\nTimestamp: 2024-12-15 23:59:42\n\nThe ALB is returning 503 to all requests.\nThis means either:\n- No healthy targets available\n- The targets are not responding\n- Configuration issue at the load balancer",
+      "hint": "Rosa: Think about what a 503 error means. The ALB has no healthy backends to send traffic to. Check the target group status."
+    },
+    {
+      "service": "CloudWatch",
+      "label": "Metrics & Monitoring",
+      "text": "$ aws cloudwatch get-metric-statistics --metric-name CPUUtilization\n\nEC2 Instance CPU Utilization:\n2024-12-15T23:30:00Z  85.2%  ← Spike\n2024-12-15T23:45:00Z  20.1%  ← Normal\n2024-12-15T23:59:00Z  18.5%  ← Still normal\n\nTarget Group Healthy Host Count:\n2024-12-15T23:50:00Z  2  (healthy)\n2024-12-15T23:59:00Z  0  (UNHEALTHY)\n2024-12-15T00:05:00Z  0  (still unhealthy)\n\nHealth Check Failures (both instances):\nReason: Request timeout (no response on port 80)\nLast successful check: 23:58:30",
+      "hint": "Rosa: Both instances failed health checks at the exact same moment (23:59). What could cause both to suddenly stop responding on port 80?"
+    },
+    {
+      "service": "Target Group",
+      "label": "Target Group Configuration",
+      "text": "$ aws elbv2 describe-target-groups --names app-servers\n\nTargetGroupName: app-servers\nHealthCheckProtocol: HTTP\nHealthCheckPort: 80\nHealthCheckPath: /health\nHealthCheckIntervalSeconds: 30\n\nRegistered Targets:\n\n1. i-0abc123def456ghi\n   State: unhealthy\n   Reason: \"Target.ResponseCodeMismatch\"\n   Description: \"Health checks failed with port 80 timeout\"\n   LastStatusChange: 2024-12-15 23:59:15\n\n2. i-0xyz789uvw012rst  \n   State: unhealthy\n   Reason: \"Target.ResponseCodeMismatch\"\n   Description: \"Health checks failed with port 80 timeout\"\n   LastStatusChange: 2024-12-15 23:59:18\n\nBoth instances: NOT RESPONDING on port 80",
+      "hint": "Rosa: Port 80 is where the ALB sends health checks. Why would both instances stop listening there at 23:59?"
+    },
+    {
+      "service": "EC2",
+      "label": "EC2 Instances",
+      "text": "$ aws ec2 describe-instances --instance-ids i-0abc123def456ghi i-0xyz789uvw012rst\n\nInstance 1: i-0abc123def456ghi\nState: running\nCPU Utilization: 18.5%\nMemory: Available\nDisk Space: OK\nNetwork: OK\nStatus Checks: Passed (system and instance)\n\nInstance 2: i-0xyz789uvw012rst\nState: running\nCPU Utilization: 19.2%\nMemory: Available\nDisk Space: OK  \nNetwork: OK\nStatus Checks: Passed (system and instance)\n\n✓ Both instances are running and healthy\n✓ No OS or hardware issues detected\n✓ Application processes are running\n✗ But unreachable on port 80 from ALB",
+      "hint": "Rosa: The instances are running fine. So the problem must be with network connectivity or a security rule, right?"
+    },
+    {
+      "service": "CloudTrail",
+      "label": "Audit Logs",
+      "text": "$ aws cloudtrail lookup-events --event-name RevokeSecurityGroupIngress\n\n{\n  \"Events\": [\n    {\n      \"EventName\": \"RevokeSecurityGroupIngress\",\n      \"EventTime\": \"2024-12-15T23:58:42Z\",\n      \"Username\": \"intern-luke\",\n      \"SourceIP\": \"203.0.113.25\",\n      \"Resources\": [\n        {\n          \"ResourceType\": \"AWS::EC2::SecurityGroup\",\n          \"ResourceName\": \"sg-web-instances\"\n        }\n      ],\n      \"CloudTrailEvent\": {\n        \"requestParameters\": {\n          \"groupId\": \"sg-web-instances\",\n          \"ipPermissions\": [\n            {\n              \"ipProtocol\": \"tcp\",\n              \"fromPort\": 80,\n              \"toPort\": 80,\n              \"userIdGroupPairs\": [\n                {\"groupId\": \"sg-alb\", \"description\": \"ALB access\"}\n              ]\n            }\n          ]\n        }\n      }\n    }\n  ]\n}\n\n⚠️  CRITICAL: Rule allowing ALB→EC2 on port 80 was DELETED\n    Time: 23:58:42 (just before outage at 23:59)",
+      "hint": "Rosa: This is the smoking gun. Someone deleted a critical security group rule. Who had access, and why would they do that?"
+    },
+    {
+      "service": "Security Groups",
+      "label": "Security Group Rules",
+      "text": "$ aws ec2 describe-security-groups --group-ids sg-web-instances\n\nGroupId: sg-web-instances\nGroupName: web-instances\n\nInbound Rules:\n┌─────────────────────────────────────────────┐\n│ Protocol │ Port │ Source        │ Effect    │\n├─────────────────────────────────────────────┤\n│ TCP      │ 22   │ 0.0.0.0/0     │ ALLOW ⚠️  │\n│ TCP      │ 443  │ sg-alb        │ ALLOW     │\n└─────────────────────────────────────────────┘\n\n❌ MISSING: TCP 80 from sg-alb (was deleted at 23:58:42)\n\nOutbound Rules:\nAll traffic allowed\n\n✓ Port 443 (HTTPS) allows ALB traffic\n✗ Port 80 (HTTP) rule is GONE - ALB health checks blocked!\n⚠️  SSH (port 22) is open to entire internet (0.0.0.0/0)",
+      "hint": "The rule allowing ALB to reach the instances on port 80 is missing. This breaks the health check mechanism."
+    },
+    {
+      "service": "Deployments",
+      "label": "Recent Deployments",
+      "text": "$ aws codedeploy list-deployments\n\nDeployment Summary:\n\n2024-12-15 22:00:15 UTC - Deployment d-ABCD1234EF\nStatus: SUCCESS ✓\nVersion: 2.1.0\nInstances Updated: 2\nDuration: 45 seconds\nErrors: None\n\nDeployment Log:\n[22:00:15] Starting deployment to i-0abc123def456ghi\n[22:00:30] Application files transferred\n[22:00:45] Service restarted - SUCCESS\n[22:01:00] Health check passed\n[22:01:15] Starting deployment to i-0xyz789uvw012rst\n[22:01:30] Application files transferred\n[22:01:45] Service restarted - SUCCESS\n[22:02:00] Health check passed\n\n✓ Both instances updated successfully\n✓ No errors in deployment\n✓ Application running fine 23:30-23:59 (2 hours)\n\nConclusion: Deployment is NOT the cause.\nIssue occurred 1 hour 59 minutes AFTER deployment completed.",
+      "hint": "The deployment worked fine and ran for almost 2 hours. Look for what changed at 23:59, not at 22:00."
+    }
+  ],
+  "accusations": {
+    "rootCauses": [
+      {
+        "id": "cause-cpu-spike",
+        "text": "CPU spike at 23:30 caused the instances to become unresponsive"
+      },
+      {
+        "id": "cause-deployment",
+        "text": "The 22:00 code deployment had a hidden bug that crashed the app"
+      },
+      {
+        "id": "cause-sg-rule",
+        "text": "Deleted security group rule removed ALB's access to instances on port 80"
+      },
+      {
+        "id": "cause-rds",
+        "text": "Database connection pool exhausted, instances couldn't respond"
+      },
+      {
+        "id": "cause-ddos",
+        "text": "Distributed denial of service attack overwhelmed the instances"
+      }
+    ],
+    "keyEvidence": [
+      {
+        "id": "evidence-metrics",
+        "text": "CloudWatch metrics showing health check failures"
+      },
+      {
+        "id": "evidence-cloudtrail",
+        "text": "CloudTrail log showing security group rule was revoked"
+      },
+      {
+        "id": "evidence-deployment",
+        "text": "Deployment logs showing successful deployment 2 hours prior"
+      },
+      {
+        "id": "evidence-cpu",
+        "text": "CPU spike at 23:30 before the outage"
+      },
+      {
+        "id": "evidence-instance-logs",
+        "text": "Application logs showing no errors or crashes"
+      }
+    ],
+    "fixes": [
+      {
+        "id": "fix-sg",
+        "text": "Re-add the TCP 80 inbound rule from sg-alb to sg-web-instances"
+      },
+      {
+        "id": "fix-scale",
+        "text": "Add more EC2 instances to handle the CPU load"
+      },
+      {
+        "id": "fix-redeploy",
+        "text": "Rollback to the previous version 2.0.9"
+      },
+      {
+        "id": "fix-rds",
+        "text": "Increase the database connection pool size"
+      },
+      {
+        "id": "fix-waf",
+        "text": "Enable AWS WAF to block the DDoS attack"
+      }
+    ]
+  },
+  "solution": {
+    "rootCause": "cause-sg-rule",
+    "keyEvidence": "evidence-cloudtrail",
+    "fix": "fix-sg"
+  },
+  "explanation": "The intern accidentally deleted the security group rule that allowed the ALB to communicate with the EC2 instances on port 80. Without this rule, the ALB's health checks couldn't reach the instances, causing them to be marked as unhealthy. Once an ALB has no healthy targets, it returns 503 Service Unavailable to all incoming requests. The CPU spike was a separate scheduled backup that had no connection to the outage. The fix is straightforward: restore the deleted inbound rule to allow TCP port 80 traffic from the ALB security group.",
+  "hiddenBonus": "Port 22 (SSH) is open to 0.0.0.0/0, allowing anyone on the internet to attempt SSH login to your instances. This is a critical security risk. Use a security group that restricts SSH to specific IP addresses or a bastion host instead.",
+  "chapter": 1,
+  "client": "martha",
+  "characters": [
+    "martha",
+    "luke"
+  ],
+  "keywords": [
+    "Security Groups",
+    "ALB",
+    "Health Checks",
+    "CloudTrail"
+  ],
+  "intro": "Rosa: Your first client is Martha, who owns The Digital Bakery. Her website went down during their biggest sale of the year. Let's investigate.",
+  "outro": "Rosa: Great work! You caught the security group misconfiguration. This is exactly the kind of subtle-but-critical issue we see in production. You're off to a strong start."
+}

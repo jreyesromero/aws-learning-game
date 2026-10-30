@@ -1,0 +1,140 @@
+{
+  "id": "case-02",
+  "title": "The Ghost Address",
+  "description": "BrightPath Academy's website moved to a different IP after a restart. Students can't reach it.",
+  "chapter": 2,
+  "client": "ana",
+  "characters": ["ana"],
+  "keywords": ["Elastic IP", "Public IP", "DNS", "Networking", "Route 53"],
+  "intro": "Rosa: Our next client is Ana from BrightPath Academy. She runs an online school with a tight budget. Look at the time—it's Monday 8:00 AM and students are supposed to start online classes at 10:00. Let's investigate fast!",
+  "outro": "Ana: Thank goodness! I was so worried. How can I avoid this happening again? Rosa: Great question. This is a perfect example of why infrastructure matters. We'll make sure it's set up properly. By the way, Martha from The Digital Bakery called again. Apparently Luke has been trying to 'improve security' over there. We better check on that next.",
+  "briefing": {
+    "clientMessage": "Hi, I'm Ana, director of BrightPath Academy. We're an online school, and this Monday morning is crucial—our students are waiting to join their classes at 10:00. But since we restarted our server this morning, nobody can reach the website. The error says something about connection timeout. The server is definitely on and working—I can see it in the AWS console. Please help me figure out why students can't reach it!",
+    "architecture": "┌──────────────────────────────────┐\n│      Students (Internet)         │\n│   (Accessing learn.brightpath)   │\n└────────────────┬─────────────────┘\n                 │\n                 ↓\n    ┌────────────────────────┐\n    │   Route 53 (DNS)       │\n    │ learn.brightpath.com   │\n    └────────────┬───────────┘\n                 │\n                 ↓\n    ┌────────────────────────┐\n    │    EC2 Instance        │\n    │  (Web Server)          │\n    │  Running Apache        │\n    └────────────────────────┘"
+  },
+  "evidence": [
+    {
+      "service": "Student Report",
+      "label": "Error Message",
+      "text": "Browser Error (Chrome):\nlearn.brightpath.example\nThis site can't be reached\n\nERR_CONNECTION_TIMED_OUT\n\nThe connection attempt timed out.\n\nFirst reported: Monday 2024-12-16 08:00:15 UTC\nStatus: ongoing, all students affected\nLast working: Friday 2024-12-13 18:00 UTC (before server was stopped)",
+      "hint": "Rosa: The error is a connection timeout, not a certificate error or DNS error. The browser can't reach the IP address that DNS points to."
+    },
+    {
+      "service": "DNS",
+      "label": "DNS Resolution Check",
+      "text": "$ dig learn.brightpath.example\n\n; <<>> DiG 9.18.10 <<>> learn.brightpath.example\n; (1 server found)\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345\n;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0\n\n;; QUESTION SECTION:\n;learn.brightpath.example.\t\tIN\tA\n\n;; ANSWER SECTION:\nlearn.brightpath.example.\t300\tIN\tA\t3.120.45.67\n\n;; Query time: 12 msec\n;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)\n;; WHEN: Mon Dec 16 09:00:00 UTC 2024\n;; MSG SIZE  rcvd: 72\n\n✓ DNS record exists\n✓ Points to IP: 3.120.45.67\n✓ TTL: 300 seconds",
+      "hint": "Rosa: The DNS record says students should go to 3.120.45.67. Let's see if that's still the right address."
+    },
+    {
+      "service": "Route 53",
+      "label": "Route 53 A Record",
+      "text": "$ aws route53 list-resource-record-sets --hosted-zone-id Z0ABC123DEF456\n\nHostedZoneId: /hostedzone/Z0ABC123DEF456\nName: learn.brightpath.example.\n\nResourceRecordSets:\n[\n  {\n    \"Name\": \"learn.brightpath.example.\",\n    \"Type\": \"A\",\n    \"TTL\": 300,\n    \"ResourceRecords\": [\n      {\n        \"Value\": \"3.120.45.67\"\n      }\n    ],\n    \"SetIdentifier\": null,\n    \"HealthCheckId\": null\n  }\n]\n\nRecord Type: A (IPv4 address)\nValue: 3.120.45.67\nTTL: 300 seconds",
+      "hint": "Rosa: So Route 53 is pointing to 3.120.45.67. Let's check if that's the EC2 instance's current public IP."
+    },
+    {
+      "service": "EC2",
+      "label": "EC2 Instance Details",
+      "text": "$ aws ec2 describe-instances --instance-ids i-0def789abc456xyz\n\n{\n  \"Reservations\": [\n    {\n      \"Instances\": [\n        {\n          \"InstanceId\": \"i-0def789abc456xyz\",\n          \"InstanceType\": \"t3.micro\",\n          \"State\": {\n            \"Name\": \"running\",\n            \"Code\": 16\n          },\n          \"PublicIpAddress\": \"18.195.88.21\",\n          \"PrivateIpAddress\": \"10.0.1.42\",\n          \"ElasticIpAddress\": null,\n          \"StatusCheckStatus\": \"ok\",\n          \"StatusCheck\": {\n            \"InstanceStatus\": \"ok\",\n            \"SystemStatus\": \"ok\"\n          },\n          \"LaunchTime\": \"2024-12-16T07:45:30.000Z\",\n          \"CpuUtilization\": 3.2,\n          \"SecurityGroups\": [\n            {\n              \"GroupId\": \"sg-0abc123def456xyz\",\n              \"GroupName\": \"web-server\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n\nInstance State: running\nCurrent Public IP: 18.195.88.21\nPrivate IP: 10.0.1.42\nElastic IP: None (regular public IP)\nStatus Checks: 2/2 passed ✓\nCPU: 3.2% (normal)\nLast Launch: Monday 07:45:30 UTC (after restart)\n\n⚠️  WARNING: Public IP changed from 3.120.45.67 to 18.195.88.21",
+      "hint": "Rosa: Look at that! The instance's current public IP is 18.195.88.21, but the DNS record still points to 3.120.45.67. That's the mismatch!"
+    },
+    {
+      "service": "Direct Test",
+      "label": "Direct Connection Test",
+      "text": "$ curl -I http://18.195.88.21\n\nHTTP/1.1 200 OK\nDate: Mon, 16 Dec 2024 09:05:00 GMT\nServer: Apache/2.4.52 (Ubuntu)\nContent-Type: text/html; charset=UTF-8\nConnection: keep-alive\n\n✓ Server responds fine\n✓ Apache web server running\n✓ Returns 200 OK\n✓ Homepage loads correctly\n\n$ curl -I http://3.120.45.67\n\ncurl: (7) Failed to connect to 3.120.45.67 port 80: Connection timed out\n\n✗ Old IP is unreachable\n✗ Likely belongs to another customer or is unassigned",
+      "hint": "Rosa: When you stop and start an instance, AWS releases the public IP and assigns a new one. The old IP is gone!"
+    },
+    {
+      "service": "CloudTrail",
+      "label": "Instance Lifecycle Events",
+      "text": "$ aws cloudtrail lookup-events --event-names StopInstances,StartInstances\n\nEvents (sorted by time):\n\n1. Event: StopInstances\n   Time: 2024-12-13 19:02:15 UTC (Friday)\n   User: Root\n   InstanceId: i-0def789abc456xyz\n   Reason: Ana stopped the instance to save costs over the weekend\n\n2. Event: StartInstances\n   Time: 2024-12-16 07:45:30 UTC (Monday morning)\n   User: Root\n   InstanceId: i-0def789abc456xyz\n   Reason: Ana started the instance for Monday's classes\n\n⚠️  IMPORTANT: Starting an instance after a stop causes a PUBLIC IP CHANGE\n             A reboot would keep the same IP\n             An Elastic IP would never change",
+      "hint": "Rosa: Stop and start is different from reboot. One changes the public IP, the other doesn't."
+    },
+    {
+      "service": "Security Groups",
+      "label": "Security Group Configuration",
+      "text": "$ aws ec2 describe-security-groups --group-ids sg-0abc123def456xyz\n\nGroupId: sg-0abc123def456xyz\nGroupName: web-server\n\nInbound Rules:\n┌────────────────────────────────────┐\n│ Protocol │ Port │ Source  │ Effect │\n├────────────────────────────────────┤\n│ TCP      │ 22   │ 0.0.0.0 │ ALLOW  │\n│ TCP      │ 80   │ 0.0.0.0 │ ALLOW  │\n│ TCP      │ 443  │ 0.0.0.0 │ ALLOW  │\n└────────────────────────────────────┘\n\nOutbound Rules:\nAll traffic allowed to 0.0.0.0/0\n\n✓ Port 80 (HTTP) is open\n✓ Port 443 (HTTPS) is open\n✓ No blocking rules",
+      "hint": "Rosa: Security group looks fine—ports 80 and 443 are open. This isn't the problem."
+    },
+    {
+      "service": "Email",
+      "label": "AWS Notification",
+      "text": "From: AWS Notifications <no-reply@sns.amazonaws.com>\nDate: Mon, 16 Dec 2024 10:15:00 UTC\nSubject: [Action Required] Your SSL Certificate Expires in 25 Days\n\nDear AWS Customer,\n\nWe are writing to notify you that your SSL certificate will expire in 25 days:\n\nCertificate Name: learn.brightpath.example\nExpiration Date: 2024-01-10 23:59:59 UTC\nRegion: eu-central-1\n\nPlease renew your certificate before expiration to avoid service disruptions.\n\n---\n\n⏰ Status: NOT EXPIRED YET (expires in 25 days)\n⚠️  Red herring: The error is a connection timeout, not a certificate error",
+      "hint": "Rosa: The certificate warning is a separate issue—it hasn't expired yet. The timeout means students can't even reach the server to check the certificate."
+    }
+  ],
+  "accusations": {
+    "rootCauses": [
+      {
+        "id": "cause-ip-change",
+        "text": "The instance's public IP changed after stop/start, and DNS still points to the old IP"
+      },
+      {
+        "id": "cause-sg-blocking",
+        "text": "Security group inbound rules are blocking HTTP/HTTPS traffic"
+      },
+      {
+        "id": "cause-ssl-expired",
+        "text": "SSL certificate expired and is causing connection failures"
+      },
+      {
+        "id": "cause-instance-crashed",
+        "text": "The instance crashed or isn't actually running"
+      },
+      {
+        "id": "cause-ttl-issue",
+        "text": "DNS TTL is too long and cached the old address"
+      }
+    ],
+    "keyEvidence": [
+      {
+        "id": "evidence-ip-mismatch",
+        "text": "Mismatch between DNS record (3.120.45.67) and current instance IP (18.195.88.21)"
+      },
+      {
+        "id": "evidence-cloudtrail",
+        "text": "CloudTrail shows StopInstances (Friday) and StartInstances (Monday) events"
+      },
+      {
+        "id": "evidence-direct-test",
+        "text": "Direct curl test: new IP works, old IP times out"
+      },
+      {
+        "id": "evidence-sg-open",
+        "text": "Security group allows port 80/443 from anywhere"
+      },
+      {
+        "id": "evidence-ssl-warning",
+        "text": "SSL certificate expiration warning (not yet expired)"
+      }
+    ],
+    "fixes": [
+      {
+        "id": "fix-elastic-ip",
+        "text": "Allocate an Elastic IP, associate it with the instance, and update Route 53 to point to it"
+      },
+      {
+        "id": "fix-update-dns",
+        "text": "Update the Route 53 A record to point to the new public IP (18.195.88.21)"
+      },
+      {
+        "id": "fix-reboot",
+        "text": "Reboot the instance instead of stop/start to keep the same public IP"
+      },
+      {
+        "id": "fix-sg-rule",
+        "text": "Add security group rule to allow HTTP/HTTPS traffic"
+      },
+      {
+        "id": "fix-load-balancer",
+        "text": "Use an ALB with Route 53 alias record for better resilience"
+      }
+    ]
+  },
+  "solution": {
+    "rootCause": "cause-ip-change",
+    "keyEvidence": "evidence-ip-mismatch",
+    "fix": "fix-elastic-ip"
+  },
+  "explanation": "When an EC2 instance is stopped and then started, AWS releases the public IP address and assigns a new one. In this case, the instance went from 3.120.45.67 to 18.195.88.21. However, the Route 53 DNS record was never updated, so when students try to reach learn.brightpath.example, DNS resolves to the old IP, which no longer belongs to BrightPath. The server itself is healthy (status checks pass, Apache is running), but it's unreachable because no one is sending traffic to the correct new IP.\n\nKey AWS concepts: (1) Regular public IPs change on stop/start; reboots keep the same IP. (2) Elastic IPs are fixed addresses that stay with an instance until you explicitly release them. (3) DNS records point to IPs, so if the IP changes, the record must change too. (4) For production, a load balancer with a Route 53 alias record is more resilient because the alias points to the load balancer's stable endpoint, not an instance IP.",
+  "hiddenBonus": "CloudTrail shows Ana is using the Root account (not an IAM user) for everyday tasks like stopping and starting instances. AWS best practice: protect the root account with MFA and use IAM users or IAM Identity Center for daily operations. The root account should only be used for account recovery and enabling/disabling MFA."
+}
