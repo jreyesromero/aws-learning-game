@@ -292,10 +292,30 @@ Cases are defined in JSON files in the `/cases` directory. To add a new case:
 This game teaches AWS concepts in progression:
 
 1. **Basics** (Ch. 1): Security groups, load balancers, audit trails
+   - [Security Groups](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html)
+   - [Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/)
+   - [CloudTrail](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/)
+
 2. **Networking** (Ch. 2): DNS, public IPs, Elastic IPs
+   - [Route 53](https://docs.aws.amazon.com/route53/latest/developerguide/)
+   - [EC2 Elastic IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html)
+   - [EC2 Public IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html)
+
 3. **Monitoring** (Ch. 3): CloudWatch, metrics, visibility
+   - [CloudWatch](https://docs.aws.amazon.com/cloudwatch/latest/userguide/)
+   - [CloudWatch Metrics](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/working_with_metrics.html)
+   - [CloudWatch Agent](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html)
+
 4. **Identity & Access** (Ch. 4): IAM, permissions, least privilege
+   - [IAM](https://docs.aws.amazon.com/iam/latest/userguide/)
+   - [IAM Policies](https://docs.aws.amazon.com/iam/latest/userguide/access_policies.html)
+   - [Least Privilege](https://docs.aws.amazon.com/iam/latest/userguide/best-practices.html)
+
 5. **Scale & Reliability** (Ch. 5): RDS, Multi-AZ, security compliance
+   - [Amazon RDS](https://docs.aws.amazon.com/rds/latest/userguide/)
+   - [RDS Multi-AZ](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html)
+   - [RDS Proxy](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.html)
+   - [AWS Security Best Practices](https://docs.aws.amazon.com/security/)
 
 ## License
 
